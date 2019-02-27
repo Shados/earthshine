@@ -1,0 +1,14 @@
+{
+  "name": "earthshine",
+  "version": "0.0.1",
+  "author": "Alexei Robyn <shados@shados.net>",
+  "maintainer": "Alexei Robyn <shados@shados.net>",
+  "description": "A MoonScript/Lua library",
+  "detailed": "A MoonScript/Lua library",
+  "homepage": "https://github.com/Shados/earthshine",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Shados/earthshine"
+  },
+  "dependencies": {}
+}
