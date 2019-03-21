@@ -159,7 +159,7 @@ describe "MADFA package tests:", ->
       before_each ->
         madfa = MADFA.new!
 
-      it "tests that prefixes are shared between added words", -> -- {{{
+      it "prefixes are shared between added words", -> -- {{{
         words = { prefix_shared, base_word }
 
         madfa\add_words words
@@ -187,7 +187,7 @@ describe "MADFA package tests:", ->
           assert.is.True current_state.final
       -- }}}
 
-      it "tests that the suffixes are shared between added words", -> -- {{{
+      it "the suffixes are shared between added words", -> -- {{{
         words = { suffix_shared, base_word }
 
         madfa\add_words words
@@ -235,7 +235,7 @@ describe "MADFA package tests:", ->
         assert.is.True current_state.final
       -- }}}
 
-      it "tests that both prefix and suffix can be shared between added words", -> -- {{{
+      it "both prefix and suffix can be shared between added words", -> -- {{{
         words = { base_word, both_shared }
 
         madfa\add_words words
@@ -290,7 +290,7 @@ describe "MADFA package tests:", ->
         assert.is.True current_state.final
       -- }}}
 
-      it "tests that words can be added in separate calls with identical results", ->
+      it "words can be added in separate calls with identical results", ->
         first_words = { base_word }
         last_words = { later_word }
         all_words = { base_word, later_word }
@@ -304,17 +304,30 @@ describe "MADFA package tests:", ->
 
         assert.is.True single_call_madfa\is_equivalent_to split_call_madfa
 
-      it "tests that all (and only) the words added are in the subset of the initial state", ->
+      it "all (and only) the words added are in the subset of the initial state", ->
         words = { base_word, later_word, sub_word, prefix_shared, suffix_shared, both_shared }
 
         madfa\add_words words
 
         subset = madfa\subset ""
-        table.sort subset
         table.sort words
+        assert.are.equal #subset, #words
         for i = 1, #words
           assert.are.equal words[i], subset[i]
         assert.are.equal #words, #subset
+
+      it "tests against 1,000 random words", ->
+        words = {}
+        for word in io.lines "test/data/1000-words.txt"
+          words[#words + 1] = word
+
+        madfa\add_words words
+
+        subset = madfa\subset ""
+        table.sort words
+        assert.are.equal #subset, #words
+        for i = 1, #words
+          assert.are.equal words[i], subset[i]
     -- }}}
 
     describe "add_word() tests:", -> -- {{{
@@ -324,17 +337,17 @@ describe "MADFA package tests:", ->
         words = {"foobar", "zebra", "foo", "foonot", "notbar", "follar", "wollak"}
         madfa = MADFA.new!
 
-      -- it "the length of the right language of the initial state does not decrease after each call", ->
-      --   -- One of these two cases always happens:
-      --   -- - A new word is a prefix of an existing one, in which case the right
-      --   --   language of the starting state remains the same
-      --   -- - A new word is not purely a prefix of an existing one, in which
-      --   --   case the right language of the starting state gets larger
-      --   previous_length = 0
+      it "the length of the right language of the initial state does not decrease after each call", ->
+        -- One of these two cases always happens:
+        -- - A new word is a prefix of an existing one, in which case the right
+        --   language of the starting state remains the same
+        -- - A new word is not purely a prefix of an existing one, in which
+        --   case the right language of the starting state gets larger
+        previous_length = 0
 
-      --   for word in *words
-      --     madfa\add_word word
-      --     current_length = #(madfa.initial_state.right_language)
-      --     assert previous_length <= current_length, "NOT: #{previous_length} <= #{current_length}"
-      --     previous_length = current_length
+        for word in *words
+          madfa\add_word word
+          current_length = #(madfa\subset "")
+          assert previous_length <= current_length, "NOT: #{previous_length} <= #{current_length}"
+          previous_length = current_length
     -- }}}

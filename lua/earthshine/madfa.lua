@@ -185,9 +185,11 @@ MADFA = {
     end
   end,
   _set_final = function(self, state)
-    self.register[state.final][state] = nil
+    local was_registered = self:_unregister_state(state)
     state.final = true
-    self.register[state.final][state] = true
+    if was_registered then
+      return self:_register_state(state)
+    end
   end,
   _visit_min = function(self, p, l, r)
     assert((self:_is_confluence_free(self.initial_state, l .. r)), "p1")
@@ -205,7 +207,9 @@ MADFA = {
         assert(q ~= p)
         local parent = self:_step_multiple(self.initial_state, (l:sub(1, #l - 1)))
         local label = l:at(#l)
+        self:_unregister_state(parent)
         self:_replace_transition(parent, label, q)
+        self:_register_state(parent)
         self:_unregister_state(p)
         self:_delete_state(p)
       else
@@ -216,21 +220,25 @@ MADFA = {
   end,
   _find_equivalent_state = function(self, state)
     assert(state ~= nil)
-    local match_states = self.register[state.final]
-    for other_state, _ in pairs(match_states) do
-      local _continue_0 = false
-      repeat
-        if state == other_state then
-          _continue_0 = true
-          break
+    do
+      local index_set = self:_retrieve_index_set(state, false)
+      if index_set then
+        for other_state, _ in pairs(index_set) do
+          local _continue_0 = false
+          repeat
+            if state == other_state then
+              _continue_0 = true
+              break
+            end
+            if self:_is_equiv_state(state, other_state) then
+              return other_state
+            end
+            _continue_0 = true
+          until true
+          if not _continue_0 then
+            break
+          end
         end
-        if self:_is_equiv_state(state, other_state) then
-          return other_state
-        end
-        _continue_0 = true
-      until true
-      if not _continue_0 then
-        break
       end
     end
     return nil
@@ -275,8 +283,50 @@ MADFA = {
   end,
   _unregister_state = function(self, state)
     assert(state ~= nil)
-    local match_states = self.register[state.final]
-    match_states[state] = nil
+    do
+      local index_set = self:_retrieve_index_set(state, false)
+      if index_set then
+        index_set[state] = nil
+        return true
+      else
+        return false
+      end
+    end
+  end,
+  _register_state = function(self, state)
+    assert(state ~= nil)
+    local index_set = self:_retrieve_index_set(state, true)
+    index_set[state] = true
+  end,
+  _retrieve_index_set = function(self, state, create_new)
+    assert(state ~= nil)
+    local index_by_transition_count = self.register[state.final]
+    local index_by_labels
+    do
+      local _ = index_by_transition_count[#state.sorted_keys]
+      if _ then
+        index_by_labels = _
+      elseif create_new then
+        _ = { }
+        index_by_transition_count[#state.sorted_keys] = _
+        index_by_labels = _
+      else
+        return false
+      end
+    end
+    local labels = (""):join(state.sorted_keys)
+    do
+      local set = index_by_labels[labels]
+      if set then
+        return set
+      elseif create_new then
+        set = { }
+        index_by_labels[labels] = set
+        return set
+      else
+        return false
+      end
+    end
   end,
   _delete_state = function(self, state)
     assert(state ~= nil)
@@ -296,11 +346,6 @@ MADFA = {
   _iterate_transitions = function(self, state)
     assert(state ~= nil)
     return sorted_iterator(state.transitions, state.sorted_keys)
-  end,
-  _register_state = function(self, state)
-    assert(state ~= nil)
-    local match_states = self.register[state.final]
-    match_states[state] = true
   end,
   _state_subset = function(self, state, prefix, accumulator)
     if prefix == nil then

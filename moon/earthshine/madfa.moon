@@ -42,6 +42,10 @@ MADFA =
   -- @treturn MADFA a new MADFA instance
   new: () ->
     madfa = with setmetatable {}, MADFA.__class_metatable
+      -- Holds indexes grouping registered states by various properties
+      -- Boolean for indexes by finality
+      -- Numeric for indexes by # of outgoing transitions
+      -- Strings for indexes by sorted list of transition labels
       .register =
         [true]: {}
         [false]: {}
@@ -201,9 +205,12 @@ MADFA =
       .sorted_keys = sorted_key_list state.transitions
 
   _set_final: (state) =>
-    @register[state.final][state] = nil
+    -- This is the one of only two places where we may modify a pre-existing
+    -- (non-new, non-cloned) state, so we have to unregister and possibly
+    -- re-register it to account for the change
+    was_registered = @_unregister_state state
     state.final = true
-    @register[state.final][state] = true
+    @_register_state state if was_registered
 
   _visit_min: (p, l, r) =>
     -- Preconditions
@@ -224,7 +231,13 @@ MADFA =
       assert q != p
       parent = @_step_multiple @initial_state, (l\sub 1, #l - 1)
       label = l\at #l
+      -- This is the one of only two places where we modify a pre-existing
+      -- (non-new, non-cloned) state, so we have to unregister and re-register
+      -- it to account for the change
+      @_unregister_state parent
       @_replace_transition parent, label, q
+      @_register_state parent
+
       @_unregister_state p
       @_delete_state p
     else
@@ -235,11 +248,11 @@ MADFA =
 
   _find_equivalent_state: (state) =>
     assert state != nil
-    match_states = @register[state.final]
-    for other_state, _ in pairs match_states
-      continue if state == other_state -- Yes, really. Equivalence, not identity.
-      if @_is_equiv_state state, other_state
-        return other_state
+    if index_set = @_retrieve_index_set state, false
+      for other_state, _ in pairs index_set
+        continue if state == other_state -- Yes, really. Equivalence, not identity.
+        if @_is_equiv_state state, other_state
+          return other_state
 
     return nil
 
@@ -272,8 +285,35 @@ MADFA =
 
   _unregister_state: (state) =>
     assert state != nil
-    match_states = @register[state.final]
-    match_states[state] = nil
+    if index_set = @_retrieve_index_set state, false
+      index_set[state] = nil
+      return true
+    else
+      return false
+
+  _register_state: (state) =>
+    assert state != nil
+    index_set = @_retrieve_index_set state, true
+    index_set[state] = true
+
+  _retrieve_index_set: (state, create_new) =>
+    assert state != nil
+    index_by_transition_count = @register[state.final]
+    index_by_labels = if _ = index_by_transition_count[#state.sorted_keys]
+      _
+    elseif create_new
+      _ = {}
+      index_by_transition_count[#state.sorted_keys] = _
+      _
+    else return false
+    labels = ""\join state.sorted_keys
+    if set = index_by_labels[labels]
+      return set
+    elseif create_new
+      set = {}
+      index_by_labels[labels] = set
+      return set
+    else return false
 
   _delete_state: (state) =>
     assert state != nil
@@ -302,11 +342,6 @@ MADFA =
   _iterate_transitions: (state) =>
     assert state != nil
     return sorted_iterator state.transitions, state.sorted_keys
-
-  _register_state: (state) =>
-    assert state != nil
-    match_states = @register[state.final]
-    match_states[state] = true
 
   --- Adds to the accumulator the subset of strings reachable from the given
   --state, optionally prefixed by the given prefix.
