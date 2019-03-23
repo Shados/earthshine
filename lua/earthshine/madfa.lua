@@ -90,7 +90,11 @@ MADFA = {
       assert(q == self:_step_multiple(self.initial_state, l))
       assert(q ~= nil)
       local p = self:_new_state()
+      local was_registered = self:_unregister_state(q)
       self:_add_transition(q, head, p)
+      if was_registered then
+        self:_register_state(q)
+      end
       q = p
       l, r = l .. head, tail
     end
@@ -211,9 +215,9 @@ MADFA = {
         self:_replace_transition(parent, label, q)
         self:_register_state(parent)
         self:_unregister_state(p)
-        self:_delete_state(p)
+        return self:_delete_state(p)
       else
-        self:_register_state(p)
+        return self:_register_state(p)
       end
     end
     return assert((self:_is_confluence_free(self.initial_state, l:sub(1, #l - 1))), "Postcondition failure")
@@ -230,7 +234,17 @@ MADFA = {
               _continue_0 = true
               break
             end
-            if self:_is_equiv_state(state, other_state) then
+            local ok = true
+            local _list_0 = state.sorted_keys
+            for _index_0 = 1, #_list_0 do
+              local label = _list_0[_index_0]
+              local child_a, child_b = state.transitions[label], other_state.transitions[label]
+              if not (child_a == child_b) then
+                ok = false
+                break
+              end
+            end
+            if ok then
               return other_state
             end
             _continue_0 = true
@@ -242,26 +256,6 @@ MADFA = {
       end
     end
     return nil
-  end,
-  _is_equiv_state = function(self, state_a, state_b)
-    if state_a.final ~= state_b.final then
-      return false
-    end
-    if #state_a.sorted_keys ~= #state_b.sorted_keys then
-      return false
-    end
-    if not (self:_compare_state_labels(state_a, state_b)) then
-      return false
-    end
-    local _list_0 = state_a.sorted_keys
-    for _index_0 = 1, #_list_0 do
-      local label = _list_0[_index_0]
-      local child_a, child_b = state_a.transitions[label], state_b.transitions[label]
-      if not (self:_is_equiv_state(child_a, child_b)) then
-        return false
-      end
-    end
-    return true
   end,
   _compare_state_labels = function(self, state_a, state_b)
     for index, label in pairs(state_a.sorted_keys) do
@@ -286,12 +280,13 @@ MADFA = {
     do
       local index_set = self:_retrieve_index_set(state, false)
       if index_set then
-        index_set[state] = nil
-        return true
-      else
-        return false
+        if index_set[state] then
+          index_set[state] = nil
+          return true
+        end
       end
     end
+    return false
   end,
   _register_state = function(self, state)
     assert(state ~= nil)
@@ -358,6 +353,20 @@ MADFA = {
     for label, transition_state in self:_iterate_transitions(state) do
       self:_state_subset(transition_state, prefix .. label, accumulator)
     end
+  end,
+  _is_equiv_state = function(self, state_a, state_b)
+    if state_a.final ~= state_b.final or #state_a.sorted_keys ~= #state_b.sorted_keys or not self:_compare_state_labels(state_a, state_b) then
+      return false
+    end
+    local _list_0 = state_a.sorted_keys
+    for _index_0 = 1, #_list_0 do
+      local label = _list_0[_index_0]
+      local child_a, child_b = state_a.transitions[label], state_b.transitions[label]
+      if not (self:_is_equiv_state(child_a, child_b)) then
+        return false
+      end
+    end
+    return true
   end
 }
 return MADFA

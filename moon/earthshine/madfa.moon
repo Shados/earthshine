@@ -105,7 +105,12 @@ MADFA =
       assert q != nil
 
       p = @_new_state!
+      -- This is the one of only three places where we may modify a pre-existing
+      -- (non-new, non-cloned) state, so we have to unregister and possibly
+      -- re-register it to account for the change
+      was_registered = @_unregister_state q
       @_add_transition q, head, p
+      @_register_state q if was_registered
       q = p
       l, r = l .. head, tail
 
@@ -205,7 +210,7 @@ MADFA =
       .sorted_keys = sorted_key_list state.transitions
 
   _set_final: (state) =>
-    -- This is the one of only two places where we may modify a pre-existing
+    -- This is the one of only three places where we may modify a pre-existing
     -- (non-new, non-cloned) state, so we have to unregister and possibly
     -- re-register it to account for the change
     was_registered = @_unregister_state state
@@ -231,7 +236,7 @@ MADFA =
       assert q != p
       parent = @_step_multiple @initial_state, (l\sub 1, #l - 1)
       label = l\at #l
-      -- This is the one of only two places where we modify a pre-existing
+      -- This is the one of only three places where we modify a pre-existing
       -- (non-new, non-cloned) state, so we have to unregister and re-register
       -- it to account for the change
       @_unregister_state parent
@@ -250,22 +255,23 @@ MADFA =
     assert state != nil
     if index_set = @_retrieve_index_set state, false
       for other_state, _ in pairs index_set
-        continue if state == other_state -- Yes, really. Equivalence, not identity.
-        if @_is_equiv_state state, other_state
-          return other_state
+        -- Yes, really. Equivalence, not identity, because at this level we
+        -- intend to merge.
+        continue if state == other_state
+        ok = true
+        -- The two states are in the same classes, so we just need to check
+        -- their children for equivalence recursively
+        for label in *state.sorted_keys
+          child_a, child_b = state.transitions[label], other_state.transitions[label]
+          -- We can compare children for simple equality because we know that
+          -- all child states have already been minimized; ergo all equivalent
+          -- child states are also equal ones
+          unless child_a == child_b
+            ok = false
+            break
+        return other_state if ok
 
     return nil
-
-  -- Have already checked finality at the top-level, but not on recursive
-  -- invocations
-  _is_equiv_state: (state_a, state_b) =>
-    return false if state_a.final != state_b.final
-    return false if #state_a.sorted_keys != #state_b.sorted_keys
-    return false unless @_compare_state_labels state_a, state_b
-    for label in *state_a.sorted_keys
-      child_a, child_b = state_a.transitions[label], state_b.transitions[label]
-      return false unless @_is_equiv_state child_a, child_b
-    return true
 
   _compare_state_labels: (state_a, state_b) =>
     for index, label in pairs state_a.sorted_keys
@@ -286,10 +292,10 @@ MADFA =
   _unregister_state: (state) =>
     assert state != nil
     if index_set = @_retrieve_index_set state, false
-      index_set[state] = nil
-      return true
-    else
-      return false
+      if index_set[state]
+        index_set[state] = nil
+        return true
+    return false
 
   _register_state: (state) =>
     assert state != nil
@@ -299,6 +305,8 @@ MADFA =
   _retrieve_index_set: (state, create_new) =>
     assert state != nil
     index_by_transition_count = @register[state.final]
+
+    -- Retrieve or create an index level
     index_by_labels = if _ = index_by_transition_count[#state.sorted_keys]
       _
     elseif create_new
@@ -306,6 +314,8 @@ MADFA =
       index_by_transition_count[#state.sorted_keys] = _
       _
     else return false
+
+    -- Retrieve or create an index level
     labels = ""\join state.sorted_keys
     if set = index_by_labels[labels]
       return set
@@ -355,5 +365,15 @@ MADFA =
 
     for label, transition_state in @_iterate_transitions state
       @_state_subset transition_state, prefix .. label, accumulator
+
+  _is_equiv_state: (state_a, state_b) =>
+    if state_a.final != state_b.final or
+       #state_a.sorted_keys != #state_b.sorted_keys or
+       not @_compare_state_labels state_a, state_b
+      return false
+    for label in *state_a.sorted_keys
+      child_a, child_b = state_a.transitions[label], state_b.transitions[label]
+      return false unless @_is_equiv_state child_a, child_b
+    return true
 
 return MADFA
