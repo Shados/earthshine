@@ -7,13 +7,12 @@
 --    > madfa\subset "foo"
 --    { "foo", "foobar", "foobaz" }
 --
--- Dependencies: `earthshine.string`, `earthshine.table`, `inspect`
+-- Dependencies: `earthshine.string`, `earthshine.table`
 -- @module earthshine.madfa
 -- @author Alexei Robyn <shados@shados.net>
 -- @copyright 2019 Alexei Robyn
 -- @license 2-Clause BSD
 
-inspect = require 'inspect'
 require 'earthshine.string'
 earthshine_table = require 'earthshine.table'
 import sorted_iterator, sorted_key_list from earthshine_table
@@ -28,30 +27,20 @@ local ^
 -- sorted or unsorted list of words.
 --
 -- @type MADFA
-MADFA =
-  __class_metatable:
-    __index: (madfa, key) ->
-      if madfa_val = MADFA[key]
-        return madfa_val
-      else
-        return rawget madfa, key
-
+class MADFA
   -- Public API
   --- Creates and initializes a new, empty MADFA.
   --
   -- @treturn MADFA a new MADFA instance
-  new: () ->
-    madfa = with setmetatable {}, MADFA.__class_metatable
-      -- Holds indexes grouping registered states by various properties
-      -- Boolean for indexes by finality
-      -- Numeric for indexes by # of outgoing transitions
-      -- Strings for indexes by sorted list of transition labels
-      .register =
-        [true]: {}
-        [false]: {}
-      .initial_state = \_new_state!
-    madfa.initial_state.needs_rehash = true
-    return madfa
+  new: () =>
+    -- Holds indexes grouping registered states by various properties
+    -- Boolean for indexes by finality
+    -- Numeric for indexes by # of outgoing transitions
+    -- Strings for indexes by sorted list of transition labels
+    @register =
+      [true]: {}
+      [false]: {}
+    @initial_state = @_new_state!
 
   add_words: (words) =>
     -- assert @ != nil and words != nil

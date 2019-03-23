@@ -20,7 +20,7 @@ describe "MADFA package tests:", ->
     describe "_step_transition() tests:", -> -- {{{
       local madfa, state, next_state, label
       before_each ->
-        madfa = MADFA.new!
+        madfa = MADFA!
         state = madfa.initial_state
         next_state = madfa\_new_state!
         label = "a"
@@ -64,7 +64,7 @@ describe "MADFA package tests:", ->
       local madfa, state, next_states
 
       before_each ->
-        madfa = MADFA.new!
+        madfa = MADFA!
         state = madfa.initial_state
         next_states = {}
 
@@ -93,7 +93,7 @@ describe "MADFA package tests:", ->
     describe "_clone_state() tests:", -> -- {{{
       local madfa, state
       setup ->
-        madfa = MADFA.new!
+        madfa = MADFA!
         parent_state = madfa\_new_state!
         state = madfa\_new_state!
         with madfa
@@ -157,7 +157,7 @@ describe "MADFA package tests:", ->
       local madfa
 
       before_each ->
-        madfa = MADFA.new!
+        madfa = MADFA!
 
       it "prefixes are shared between added words", -> -- {{{
         words = { prefix_shared, base_word }
@@ -298,7 +298,7 @@ describe "MADFA package tests:", ->
 
         split_call_madfa\add_words first_words
         split_call_madfa\add_words last_words
-        single_call_madfa = MADFA.new!
+        single_call_madfa = MADFA!
         assert.is.not.True single_call_madfa\is_equivalent_to split_call_madfa
         single_call_madfa\add_words all_words
 
@@ -335,7 +335,7 @@ describe "MADFA package tests:", ->
 
       before_each ->
         words = {"foobar", "zebra", "foo", "foonot", "notbar", "follar", "wollak"}
-        madfa = MADFA.new!
+        madfa = MADFA!
 
       it "the length of the right language of the initial state does not decrease after each call", ->
         -- One of these two cases always happens:
