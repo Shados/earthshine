@@ -33,7 +33,6 @@ MADFA = {
     return madfa
   end,
   add_words = function(self, words)
-    assert(self ~= nil and words ~= nil)
     for _index_0 = 1, #words do
       local word = words[_index_0]
       self:add_word(word)
@@ -50,10 +49,6 @@ MADFA = {
           if p.incoming > 1 then
             break
           end
-          assert(w == l .. r)
-          assert(q == self:_step_multiple(self.initial_state, l))
-          assert(q ~= nil)
-          assert(self:_is_confluence_free(self.initial_state, l))
           l, r, q = l .. head, tail, p
         else
           break
@@ -66,10 +61,6 @@ MADFA = {
       do
         local p = self:_step_transition(q, head)
         if p then
-          assert(w == l .. r)
-          assert(q == self:_step_multiple(self.initial_state, l))
-          assert(q ~= nil)
-          assert(p.incoming > 1)
           p = self:_clone_state(p)
           self:_replace_transition(q, head, p)
           q = p
@@ -79,16 +70,9 @@ MADFA = {
         end
       end
     end
-    assert(self:_is_confluence_free(self.initial_state, w))
-    assert(q == self:_step_multiple(self.initial_state, l))
-    assert(q ~= nil)
-    assert(r == "" or (self:_step_transition(q, r:at(1))) == nil)
     while r ~= "" do
       local head = r:at(1)
       local tail = r:sub(2, #r)
-      assert(w == l .. r)
-      assert(q == self:_step_multiple(self.initial_state, l))
-      assert(q ~= nil)
       local p = self:_new_state()
       local was_registered = self:_unregister_state(q)
       self:_add_transition(q, head, p)
@@ -98,20 +82,16 @@ MADFA = {
       q = p
       l, r = l .. head, tail
     end
-    assert(q == self:_step_multiple(self.initial_state, w))
-    assert(q ~= nil)
     self:_set_final(q)
     return self:_visit_min(self.initial_state, "", w)
   end,
   is_equivalent_to = function(self, other_madfa)
-    assert(self ~= nil and other_madfa ~= nil)
     return self:_is_equiv_state(self.initial_state, other_madfa.initial_state)
   end,
   subset = function(self, prefix)
     if prefix == nil then
       prefix = ""
     end
-    assert(self ~= nil)
     local set = { }
     local start_state = self:_step_multiple(self.initial_state, prefix)
     if not (start_state) then
@@ -121,11 +101,9 @@ MADFA = {
     return set
   end,
   _step_transition = function(self, state, label)
-    assert(state ~= nil and label ~= nil)
     return state.transitions[label]
   end,
   _step_multiple = function(self, state, label_path)
-    assert(state ~= nil and label_path ~= nil)
     local current_state = state
     for label in label_path:chars() do
       current_state = self:_step_transition(current_state, label)
@@ -136,7 +114,6 @@ MADFA = {
     return current_state
   end,
   _is_confluence_free = function(self, state, word)
-    assert(state ~= nil and word ~= nil)
     if state.incoming > 1 then
       return false
     elseif #state.sorted_keys == 0 or #word == 0 then
@@ -154,7 +131,6 @@ MADFA = {
     end
   end,
   _clone_state = function(self, state)
-    assert(state ~= nil)
     local new
     do
       local _with_0 = { }
@@ -179,8 +155,6 @@ MADFA = {
     return new
   end,
   _add_transition = function(self, state, label, transition_state)
-    assert(state ~= nil and transition_state ~= nil, "self and transition_state must both be valid States (were: '" .. tostring(state) .. "', '" .. tostring(transition_state) .. "' respectively)")
-    assert(state.transitions[label] == nil, "Cannot add transition with label " .. tostring(label) .. " to state " .. tostring(state) .. " because it already has a transition with that label")
     transition_state.incoming = transition_state.incoming + 1
     do
       state.transitions[label] = transition_state
@@ -196,19 +170,15 @@ MADFA = {
     end
   end,
   _visit_min = function(self, p, l, r)
-    assert((self:_is_confluence_free(self.initial_state, l .. r)), "p1")
-    assert((p ~= nil), "p2")
     if r ~= "" then
       local head = r:at(1)
       local tail = r:sub(2, #r)
       local next_p = self:_step_transition(p, head)
       self:_visit_min(next_p, l .. head, tail)
     end
-    assert((self:_is_confluence_free(self.initial_state, l)), "i1")
     do
       local q = self:_find_equivalent_state(p)
       if q then
-        assert(q ~= p)
         local parent = self:_step_multiple(self.initial_state, (l:sub(1, #l - 1)))
         local label = l:at(#l)
         self:_unregister_state(parent)
@@ -220,10 +190,8 @@ MADFA = {
         return self:_register_state(p)
       end
     end
-    return assert((self:_is_confluence_free(self.initial_state, l:sub(1, #l - 1))), "Postcondition failure")
   end,
   _find_equivalent_state = function(self, state)
-    assert(state ~= nil)
     do
       local index_set = self:_retrieve_index_set(state, false)
       if index_set then
@@ -266,8 +234,6 @@ MADFA = {
     return true
   end,
   _replace_transition = function(self, state, label, transition_state)
-    assert(state ~= nil and transition_state ~= nil, "self and transition_state must both be valid States (were: '" .. tostring(state) .. "', '" .. tostring(transition_state) .. "' respectively)")
-    assert(state.transitions[label] ~= nil, "Cannot replace transition with label " .. tostring(label) .. " to go to state " .. tostring(transition_state) .. " because it does not already have a transition with that label")
     state.transitions[label] = nil
     transition_state.incoming = transition_state.incoming + 1
     do
@@ -276,7 +242,6 @@ MADFA = {
     end
   end,
   _unregister_state = function(self, state)
-    assert(state ~= nil)
     do
       local index_set = self:_retrieve_index_set(state, false)
       if index_set then
@@ -289,12 +254,10 @@ MADFA = {
     return false
   end,
   _register_state = function(self, state)
-    assert(state ~= nil)
     local index_set = self:_retrieve_index_set(state, true)
     index_set[state] = true
   end,
   _retrieve_index_set = function(self, state, create_new)
-    assert(state ~= nil)
     local index_by_transition_count = self.register[state.final]
     local index_by_labels
     do
@@ -324,7 +287,6 @@ MADFA = {
     end
   end,
   _delete_state = function(self, state)
-    assert(state ~= nil)
     for _label, child in self:_iterate_transitions(state) do
       child.incoming = child.incoming - 1
     end
@@ -339,14 +301,12 @@ MADFA = {
     end
   end,
   _iterate_transitions = function(self, state)
-    assert(state ~= nil)
     return sorted_iterator(state.transitions, state.sorted_keys)
   end,
   _state_subset = function(self, state, prefix, accumulator)
     if prefix == nil then
       prefix = ""
     end
-    assert(state ~= nil and accumulator ~= nil)
     if state.final then
       accumulator[#accumulator + 1] = prefix
     end
@@ -355,7 +315,13 @@ MADFA = {
     end
   end,
   _is_equiv_state = function(self, state_a, state_b)
-    if state_a.final ~= state_b.final or #state_a.sorted_keys ~= #state_b.sorted_keys or not self:_compare_state_labels(state_a, state_b) then
+    if state_a.final ~= state_b.final then
+      return false
+    end
+    if #state_a.sorted_keys ~= #state_b.sorted_keys then
+      return false
+    end
+    if not (self:_compare_state_labels(state_a, state_b)) then
       return false
     end
     local _list_0 = state_a.sorted_keys

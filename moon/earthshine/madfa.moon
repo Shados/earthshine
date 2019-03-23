@@ -54,7 +54,7 @@ MADFA =
     return madfa
 
   add_words: (words) =>
-    assert @ != nil and words != nil
+    -- assert @ != nil and words != nil
     for word in *words
       @add_word word
 
@@ -67,10 +67,10 @@ MADFA =
         break if p.incoming > 1
         -- Loop invariants
         -- print "`#{w}` == `#{l}` .. `#{r}` == `#{l .. r}`"
-        assert w == l .. r
-        assert q == @_step_multiple @initial_state, l
-        assert q != nil
-        assert @_is_confluence_free @initial_state, l
+        -- assert w == l .. r
+        -- assert q == @_step_multiple @initial_state, l
+        -- assert q != nil
+        -- assert @_is_confluence_free @initial_state, l
 
         l, r, q = l .. head, tail, p
       else break
@@ -80,10 +80,10 @@ MADFA =
       tail = r\sub 2, #r
       if p = @_step_transition q, head
         -- Loop invariants
-        assert w == l .. r
-        assert q == @_step_multiple @initial_state, l
-        assert q != nil
-        assert p.incoming > 1
+        -- assert w == l .. r
+        -- assert q == @_step_multiple @initial_state, l
+        -- assert q != nil
+        -- assert p.incoming > 1
 
         p = @_clone_state p
         @_replace_transition q, head, p
@@ -91,18 +91,18 @@ MADFA =
         l, r = l .. head, tail
       else break
 
-    assert @_is_confluence_free @initial_state, w
-    assert q == @_step_multiple @initial_state, l
-    assert q != nil
-    assert r == "" or (@_step_transition q, r\at 1) == nil
+    -- assert @_is_confluence_free @initial_state, w
+    -- assert q == @_step_multiple @initial_state, l
+    -- assert q != nil
+    -- assert r == "" or (@_step_transition q, r\at 1) == nil
 
     while r != ""
       head = r\at 1
       tail = r\sub 2, #r
       -- Loop invariants
-      assert w == l .. r
-      assert q == @_step_multiple @initial_state, l
-      assert q != nil
+      -- assert w == l .. r
+      -- assert q == @_step_multiple @initial_state, l
+      -- assert q != nil
 
       p = @_new_state!
       -- This is the one of only three places where we may modify a pre-existing
@@ -114,8 +114,8 @@ MADFA =
       q = p
       l, r = l .. head, tail
 
-    assert q == @_step_multiple @initial_state, w
-    assert q != nil
+    -- assert q == @_step_multiple @initial_state, w
+    -- assert q != nil
 
     @_set_final q
 
@@ -129,7 +129,7 @@ MADFA =
   -- @tparam madfa other_madfa the other MADFA to compare against
   -- @treturn boolean whether or not the two MADFAs are equivalent
   is_equivalent_to: (other_madfa) =>
-    assert @ != nil and other_madfa != nil
+    -- assert @ != nil and other_madfa != nil
     return @_is_equiv_state @initial_state, other_madfa.initial_state
 
   --- Returns the subset of words represented in the MADFA prefixed by the
@@ -140,7 +140,7 @@ MADFA =
   -- @treturn {string,...} the list of words in the specified subset;
   -- incidentally this will be alphabetically sorted
   subset: (prefix = "") =>
-    assert @ != nil
+    -- assert @ != nil
     set = {}
     start_state = @_step_multiple @initial_state, prefix
     unless start_state
@@ -154,11 +154,11 @@ MADFA =
 
 
   _step_transition: (state, label) =>
-    assert state != nil and label != nil
+    -- assert state != nil and label != nil
     return state.transitions[label]
 
   _step_multiple: (state, label_path) =>
-    assert state != nil and label_path != nil
+    -- assert state != nil and label_path != nil
     current_state = state
     for label in label_path\chars!
       current_state = @_step_transition current_state, label
@@ -167,7 +167,7 @@ MADFA =
     return current_state
 
   _is_confluence_free: (state, word) =>
-    assert state != nil and word != nil
+    -- assert state != nil and word != nil
     if state.incoming > 1
       return false
     elseif #state.sorted_keys == 0 or #word == 0
@@ -180,7 +180,7 @@ MADFA =
         return true
 
   _clone_state: (state) =>
-    assert state != nil
+    -- assert state != nil
     new = with {}
       .transitions = clone_table state.transitions
       .sorted_keys = clone_table state.sorted_keys
@@ -200,10 +200,10 @@ MADFA =
     return new
 
   _add_transition: (state, label, transition_state) =>
-    assert state != nil and transition_state != nil,
-      "self and transition_state must both be valid States (were: '#{state}', '#{transition_state}' respectively)"
-    assert state.transitions[label] == nil,
-      "Cannot add transition with label #{label} to state #{state} because it already has a transition with that label"
+    -- assert state != nil and transition_state != nil,
+    --   "self and transition_state must both be valid States (were: '#{state}', '#{transition_state}' respectively)"
+    -- assert state.transitions[label] == nil,
+    --   "Cannot add transition with label #{label} to state #{state} because it already has a transition with that label"
     transition_state.incoming += 1
     return with state
       .transitions[label] = transition_state
@@ -219,9 +219,9 @@ MADFA =
 
   _visit_min: (p, l, r) =>
     -- Preconditions
-    assert (@_is_confluence_free @initial_state, l .. r), "p1"
+    -- assert (@_is_confluence_free @initial_state, l .. r), "p1"
     -- assert Inequiv(Q - [states along @_step_multiple @initial-state, l..r])
-    assert (p != nil), "p2"
+    -- assert (p != nil), "p2"
     if r != ""
       head = r\at 1
       tail = r\sub 2, #r
@@ -229,11 +229,11 @@ MADFA =
       next_p = @_step_transition p, head
       @_visit_min next_p, l .. head, tail
 
-    assert (@_is_confluence_free @initial_state, l), "i1"
+    -- assert (@_is_confluence_free @initial_state, l), "i1"
 
     if q = @_find_equivalent_state p
       -- Replace with existing and delete
-      assert q != p
+      -- assert q != p
       parent = @_step_multiple @initial_state, (l\sub 1, #l - 1)
       label = l\at #l
       -- This is the one of only three places where we modify a pre-existing
@@ -249,10 +249,10 @@ MADFA =
       -- Register
       @_register_state p
 
-    assert (@_is_confluence_free @initial_state, l\sub 1, #l - 1), "Postcondition failure"
+    -- assert (@_is_confluence_free @initial_state, l\sub 1, #l - 1), "Postcondition failure"
 
   _find_equivalent_state: (state) =>
-    assert state != nil
+    -- assert state != nil
     if index_set = @_retrieve_index_set state, false
       for other_state, _ in pairs index_set
         -- Yes, really. Equivalence, not identity, because at this level we
@@ -280,17 +280,17 @@ MADFA =
     return true
 
   _replace_transition: (state, label, transition_state) =>
-    assert state != nil and transition_state != nil,
-      "self and transition_state must both be valid States (were: '#{state}', '#{transition_state}' respectively)"
-    assert state.transitions[label] != nil,
-      "Cannot replace transition with label #{label} to go to state #{transition_state} because it does not already have a transition with that label"
+    -- assert state != nil and transition_state != nil,
+    --   "self and transition_state must both be valid States (were: '#{state}', '#{transition_state}' respectively)"
+    -- assert state.transitions[label] != nil,
+    --   "Cannot replace transition with label #{label} to go to state #{transition_state} because it does not already have a transition with that label"
     state.transitions[label] = nil
     transition_state.incoming += 1
     return with state
       .transitions[label] = transition_state
 
   _unregister_state: (state) =>
-    assert state != nil
+    -- assert state != nil
     if index_set = @_retrieve_index_set state, false
       if index_set[state]
         index_set[state] = nil
@@ -298,12 +298,12 @@ MADFA =
     return false
 
   _register_state: (state) =>
-    assert state != nil
+    -- assert state != nil
     index_set = @_retrieve_index_set state, true
     index_set[state] = true
 
   _retrieve_index_set: (state, create_new) =>
-    assert state != nil
+    -- assert state != nil
     index_by_transition_count = @register[state.final]
 
     -- Retrieve or create an index level
@@ -326,7 +326,7 @@ MADFA =
     else return false
 
   _delete_state: (state) =>
-    assert state != nil
+    -- assert state != nil
     for _label, child in @_iterate_transitions state
       child.incoming -= 1
 
@@ -350,16 +350,16 @@ MADFA =
   --
   -- @treturn function an iterator function
   _iterate_transitions: (state) =>
-    assert state != nil
+    -- assert state != nil
     return sorted_iterator state.transitions, state.sorted_keys
 
   --- Adds to the accumulator the subset of strings reachable from the given
-  --state, optionally prefixed by the given prefix.
+  -- state, optionally prefixed by the given prefix.
   --
   -- @tparam[opt=''] string prefix prepends this to each string in the subset
   -- @tparam {string,...} accumulator the array to append new strings to
   _state_subset: (state, prefix = "", accumulator) =>
-    assert state != nil and accumulator != nil
+    -- assert state != nil and accumulator != nil
     if state.final
       accumulator[#accumulator + 1] = prefix
 
@@ -367,10 +367,9 @@ MADFA =
       @_state_subset transition_state, prefix .. label, accumulator
 
   _is_equiv_state: (state_a, state_b) =>
-    if state_a.final != state_b.final or
-       #state_a.sorted_keys != #state_b.sorted_keys or
-       not @_compare_state_labels state_a, state_b
-      return false
+    return false if state_a.final != state_b.final
+    return false if #state_a.sorted_keys != #state_b.sorted_keys
+    return false unless @_compare_state_labels state_a, state_b
     for label in *state_a.sorted_keys
       child_a, child_b = state_a.transitions[label], state_b.transitions[label]
       return false unless @_is_equiv_state child_a, child_b
