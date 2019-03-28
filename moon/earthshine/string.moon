@@ -92,6 +92,16 @@ Module = with string
         collected ..= delimiter
       collected ..= val
       i += 1
+    return collected
+
+  .join_list = (delimiter, list) ->
+    collected = ""
+    for index = 1, #list
+      unless index == 0
+        collected ..= delimiter
+      collected ..= val
+    return collected
+
 
   -- TODO `strip` or `trim` function to remove leading/trailing whitespace?
 

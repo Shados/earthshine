@@ -87,6 +87,17 @@ do
       collected = collected .. val
       i = i + 1
     end
+    return collected
+  end
+  _with_0.join_list = function(delimiter, list)
+    local collected = ""
+    for index = 1, #list do
+      if not (index == 0) then
+        collected = collected .. delimiter
+      end
+      collected = collected .. val
+    end
+    return collected
   end
   Module = _with_0
 end
