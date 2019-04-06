@@ -49,5 +49,18 @@ Module = with {}
       i += 1
     return i
 
+  .max = (tbl, comp=(a,b) -> a < b) ->
+    max = nil
+    max_key = nil
+    for key, val in pairs tbl
+      unless max
+        max = val
+        max_key = key
+      else
+        if comp max, val
+          max = val
+          max_key = key
+    return max, max_key
+
 
 return Module

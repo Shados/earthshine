@@ -60,6 +60,27 @@ do
     end
     return i
   end
+  _with_0.max = function(tbl, comp)
+    if comp == nil then
+      comp = function(a, b)
+        return a < b
+      end
+    end
+    local max = nil
+    local max_key = nil
+    for key, val in pairs(tbl) do
+      if not (max) then
+        max = val
+        max_key = key
+      else
+        if comp(max, val) then
+          max = val
+          max_key = key
+        end
+      end
+    end
+    return max, max_key
+  end
   Module = _with_0
 end
 return Module
