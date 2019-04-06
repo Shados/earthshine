@@ -55,15 +55,10 @@ do
   end
   _with_0.size = function(tbl)
     local i = 0
-    local index = nil
-    while true do
+    for _index, _val in pairs(tbl) do
       i = i + 1
-      local val
-      index, val = next(tbl, index)
-      if not (index) then
-        return i
-      end
     end
+    return i
   end
   Module = _with_0
 end

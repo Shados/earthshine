@@ -45,11 +45,9 @@ Module = with {}
 
   .size = (tbl) ->
     i = 0
-    index = nil
-    while true
+    for _index, _val in pairs tbl
       i += 1
-      index, val = next tbl, index
-      unless index
-        return i
+    return i
+
 
 return Module
