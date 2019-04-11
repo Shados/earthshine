@@ -1,27 +1,67 @@
-require('earthshine.string')
-local Module
+require("earthshine.string")
+local Path
 do
-  local _with_0 = { }
-  _with_0.dir_separator = package.config:at(1)
-  if _with_0.dir_separator == "\\" then
-    _with_0.dir_separator_chars = "\\/"
-  else
-    _with_0.dir_separator_chars = _with_0.dir_separator
-  end
-  _with_0.parse_dir = function(path)
-    return (path:match("^(.-)[^" .. tostring(_with_0.dir_separator_chars) .. "]*$"))
-  end
-  _with_0.is_absolute = function(path)
-    local first_char = path:at(1)
-    if _with_0.dir_separator == "\\" then
-      return first_char == "/" or first == "\\" or (path:at(2)) == ":"
+  local _class_0
+  local _base_0 = { }
+  _base_0.__index = _base_0
+  _class_0 = setmetatable({
+    __init = function() end,
+    __base = _base_0,
+    __name = "Path"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  local self = _class_0
+  self.parse_parent = function(self, path)
+    local len = #path
+    if len == 0 then
+      return "."
+    end
+    local last_slash
+    for i = len, 1, -1 do
+      local char = path:at(i)
+      if char == "/" then
+        last_slash = i
+        break
+      end
+    end
+    if not (last_slash) then
+      return "."
+    end
+    if last_slash ~= 1 then
+      last_slash = last_slash - 1
     else
-      return first_char == "/"
+      local _ = 1
+    end
+    local str = path:sub(1, last_slash)
+    if (path:at(1)) == "/" then
+      return str
+    elseif (path:sub(1, 2)) == "./" then
+      return str
+    else
+      return "./" .. str
     end
   end
-  _with_0.iterate = function(path)
-    return path:gmatch("([^" .. tostring(_with_0.dir_separator_chars) .. "]+)")
+  self.parse_name = function(self, path)
+    local parsed = path:match("^.-([^/]*)$")
+    if parsed ~= "." then
+      return parsed
+    else
+      return ""
+    end
   end
-  Module = _with_0
+  self.is_absolute = function(self, path)
+    return (path:at(1)) == "/"
+  end
+  self.iterate = function(self, path)
+    return path:gmatch("([^/]+)")
+  end
+  Path = _class_0
 end
-return Module
+return Path

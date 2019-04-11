@@ -1,25 +1,47 @@
-require 'earthshine.string'
+require "earthshine.string"
 
-Module = with {}
-  .dir_separator = package.config\at 1
-  .dir_separator_chars = if .dir_separator == "\\"
-    "\\/"
-  else
-    .dir_separator
+local *
 
-  .parse_dir = (path) ->
-    (path\match "^(.-)[^#{.dir_separator_chars}]*$")
+-- NOTE: POSIX-compatible paths, not NT or Win32
+-- TODO: In addition the class functions, add methods forming a structured path
+-- type
+class Path
+  -- These parsing functions work on strings representing paths, and return
+  -- partially-normalized fragments of those strings
+  @parse_parent = (path) =>
+    len = #path
+    return "." if len == 0
 
-  .is_absolute = (path) ->
-    first_char = path\at 1
-    if .dir_separator == "\\"
-      -- Windows
-      return first_char == "/" or first == "\\" or (path\at 2) == ":"
+    local last_slash
+    for i = len, 1, -1
+      char = path\at i
+      if char == "/"
+        last_slash = i
+        break
+    -- If we haven't found a slash, it's a two-component implicitly relative
+    -- path, so the parent is just "."
+    return "." unless last_slash
+
+    last_slash = last_slash - 1 if last_slash != 1 else 1
+    str = path\sub 1, last_slash
+    if (path\at 1) == "/"
+      -- Handle absolute paths
+      return str
+    elseif (path\sub 1, 2) == "./"
+      -- Handle explicitly relative paths
+      return str
     else
-      -- POSIX
-      return first_char == "/"
+      -- Handle implicitly relative paths
+      return "./" .. str
 
-  .iterate = (path) ->
-    path\gmatch "([^#{.dir_separator_chars}]+)"
+  @parse_name = (path) =>
+    parsed = path\match "^.-([^/]*)$"
+    return parsed if parsed != "." else ""
 
-return Module
+  @is_absolute = (path) =>
+    return (path\at 1) == "/"
+
+  @iterate = (path) =>
+    path\gmatch "([^/]+)"
+
+return Path
